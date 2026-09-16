@@ -125,7 +125,7 @@ void Mesh::drawTransformedMesh( SkeletonTransformation & transfo ) const {
         // Indications:
         const Vec3 initPoint = p;
         const Vec3 initNormal = n;
-        Vec3 accumulationRotation(0.0, 0.0, 0.0);
+        Vec3 accumulationPosition(0.0, 0.0, 0.0);
         Vec3 accumulationNormal(0.0, 0.0, 0.0);
         // you should use the skinning weights to blend the transformations of the vertex position by the bones.
         for (unsigned int j = 0; j < transfo.bone_transformations.size(); ++j) {
@@ -134,11 +134,11 @@ void Mesh::drawTransformedMesh( SkeletonTransformation & transfo ) const {
             Vec3 translation = boneTransformation.world_space_translation;
             const double weight = V[i].w[j];
 
-            accumulationRotation += weight * ( rotation * initPoint + translation);
+            accumulationPosition += weight * ( rotation * initPoint + translation);
             accumulationNormal += weight * (rotation * initNormal);
         }
 
-        new_positions[ i ] = accumulationRotation;
+        new_positions[ i ] = accumulationPosition;
         new_normals[ i ] = accumulationNormal;
     }
     //---------------------------------------------------//
