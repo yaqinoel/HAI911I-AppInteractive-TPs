@@ -290,7 +290,7 @@ int main (int argc, char ** argv) {
     glutInit (&argc, argv);
     glutInitDisplayMode (GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);
     glutInitWindowSize (SCREENWIDTH, SCREENHEIGHT);
-    window = glutCreateWindow ("anim");
+    window = glutCreateWindow ("Animation");
 
     init ();
     glutIdleFunc (idle);

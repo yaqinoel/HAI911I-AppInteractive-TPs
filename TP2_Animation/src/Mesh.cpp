@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <cmath>
+#include <numeric>
 
 void Mesh::loadOFF (const std::string & filename) {
     std::ifstream in (filename.c_str ());
@@ -49,7 +50,41 @@ void Mesh::compute_skinning_weights( Skeleton & skeleton ) {
     // so each vertex will have B weights (B = number of bones)
     // these weights shoud be stored in vertex.w:
 
+    // for all vertex
+    for (auto &vertex : V) {
+        vertex.w.clear();   // clean old weight
 
+        // for all bones
+        for (auto &bone : skeleton.bones) {
+            Articulation articulationStart = skeleton.articulations[bone.joints[0]];
+            Articulation articulationEnd = skeleton.articulations[bone.joints[1]];
+            Vec3 bonVec = articulationEnd.p - articulationStart.p;
+
+            // calculate distance et weight
+            double boneLength = bonVec.length();
+            double boneLength2 = boneLength * boneLength;
+            Vec3 vecVertexToStart = vertex.p - articulationStart.p;
+
+            double t = Vec3::dot(vecVertexToStart, bonVec) / boneLength2;
+            t = std::clamp(t, 0.0, 1.0);
+
+            Vec3 closetpoint = articulationStart.p + t * bonVec;
+            double distance = (vertex.p - closetpoint).length();
+            double safeDistance = std::max(distance, 1e-6);
+
+            double weight = 1.0 / std::pow(safeDistance, 2);
+            vertex.w.push_back(weight);
+        }
+
+        // normalize weights
+        double totalWeight = std::accumulate(vertex.w.begin(), vertex.w.end(), 0.0);
+        if (totalWeight > 0.0) {
+            for (double &weight : vertex.w) {
+                weight /= totalWeight;
+            }
+        }
+
+    }
     //---------------------------------------------------//
     //---------------------------------------------------//
     //---------------------------------------------------//
