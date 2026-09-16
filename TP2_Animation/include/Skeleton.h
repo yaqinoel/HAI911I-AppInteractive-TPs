@@ -277,13 +277,7 @@ struct Skeleton {
 
                 Mat3 &currentBoneRotation = transfoIK.bone_transformations[currentBoneIndex].localRotation;
 
-                if (currentBone.fatherBone == -1) {
-                    currentBoneRotation = rotation * currentBoneRotation;
-                } else {
-                    Mat3 parentWorldRotation = transfoIK.bone_transformations[currentBone.fatherBone].world_space_rotation;
-                    Mat3 parentWorldRotationInverse = parentWorldRotation.getTranspose();
-                    currentBoneRotation = parentWorldRotationInverse * rotation * parentWorldRotation * currentBoneRotation;
-                }
+                currentBoneRotation = rotation * currentBoneRotation;
 
                 computeGlobalTransformationParameters(transfoIK);
                 currentBoneIndex = currentBone.fatherBone;
