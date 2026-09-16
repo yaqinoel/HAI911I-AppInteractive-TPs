@@ -33,7 +33,7 @@ Camera::Camera () {
   
   trackball (curquat, 0.0, 0.0, 0.0, 0.0);
   x = y = z = 0.0;
-  _zoom = 3.0;
+  _zoom = 10.0;
 }
 
 

@@ -160,17 +160,17 @@ void key (unsigned char keyPressed, int x, int y) {
         }
         break;
 
-    case 's':
+    case 'w':
         if( displayMode == 2 ) {
             moveTargetArticulationBy( 0.1 * Vec3(0,0,-1) );
         }
         break;
-    case 'z':
+    case 's':
         if( displayMode == 2 ) {
             moveTargetArticulationBy( 0.1 * Vec3(0,0,1) );
         }
         break;
-    case 'q':
+    case 'a':
         if( displayMode == 2 ) {
             moveTargetArticulationBy( 0.1 * Vec3(-1,0,0) );
         }
@@ -184,10 +184,11 @@ void key (unsigned char keyPressed, int x, int y) {
         displayMode = (displayMode + 1) % 3;
         if( displayMode == 2 ) {
             skeletonTransfoIK = skeletonTransfo;
+            std::cout<<"displayMode : 2" << std::endl;
         }
         break;
 
-    case 'w':
+    case 'q':
         GLint polygonMode[2];
         glGetIntegerv(GL_POLYGON_MODE, polygonMode);
         if(polygonMode[0] != GL_FILL)

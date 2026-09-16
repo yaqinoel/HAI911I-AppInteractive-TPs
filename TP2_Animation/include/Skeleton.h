@@ -233,13 +233,64 @@ struct Skeleton {
 
 
 
-    void updateIKChain( SkeletonTransformation & transfoIK , unsigned int targetArticulation , Vec3 targetPosition , unsigned int maxIterNumber = 20 , double epsilonPrecision = 0.000001 ) {
+    void updateIKChain( SkeletonTransformation & transfoIK , unsigned int targetArticulationIndex , Vec3 targetPosition , unsigned int maxIterNumber = 20 , double epsilonPrecision = 0.000001 ) {
         //---------------------------------------------------//
         //---------------------------------------------------//
         // code to change :
-
         // You should orient the articulation towards target position: -> find R
         // Note: you can use Mat3::getRotationMatrixAligning
+
+        const float epsilon = 1e-6f;
+
+        Vec3 &targetArticulationPosition = transfoIK.articulations_transformed_position[ targetArticulationIndex ];
+        Articulation & targetArticulation = articulations.at(targetArticulationIndex);
+
+        for (unsigned int iter = 0; iter < maxIterNumber; ++iter) {
+
+            float distance = (targetArticulationPosition - targetPosition).length();
+            if (distance <= epsilonPrecision)
+                break;
+
+            int currentBoneIndex = targetArticulation.fatherBone;
+
+            while (currentBoneIndex != -1) {
+                Bone & currentBone = bones[currentBoneIndex];
+
+                Vec3 currentBonStartPosition = transfoIK.articulations_transformed_position[ currentBone.joints[0] ];
+
+                Vec3 currentVec = targetArticulationPosition - currentBonStartPosition;
+                Vec3 targetVec = targetPosition - currentBonStartPosition;
+
+                if (currentVec.length() < epsilon || targetVec.length() < epsilon) {
+                    currentBoneIndex = currentBone.fatherBone;
+                    continue;
+                }
+
+                Vec3 crossProduct = Vec3::cross(currentVec, targetVec);
+
+                if (crossProduct.length() < epsilon) {
+                    currentBoneIndex = currentBone.fatherBone;
+                    continue;
+                }
+
+                Mat3 rotation = Mat3::getRotationMatrixAligning(currentVec, targetVec);
+
+                Mat3 &currentBoneRotation = transfoIK.bone_transformations[currentBoneIndex].localRotation;
+
+                if (currentBone.fatherBone == -1) {
+                    currentBoneRotation = rotation * currentBoneRotation;
+                } else {
+                    Mat3 parentWorldRotation = transfoIK.bone_transformations[currentBone.fatherBone].world_space_rotation;
+                    Mat3 parentWorldRotationInverse = parentWorldRotation.getTranspose();
+                    currentBoneRotation = parentWorldRotationInverse * rotation * parentWorldRotation * currentBoneRotation;
+                }
+
+                computeGlobalTransformationParameters(transfoIK);
+                currentBoneIndex = currentBone.fatherBone;
+            }
+        }
+
+
         //---------------------------------------------------//
         //---------------------------------------------------//
         //---------------------------------------------------//
