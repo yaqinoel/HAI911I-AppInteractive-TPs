@@ -1,0 +1,20 @@
+# macOS
+.DS_Store
+
+# CMake and Qt Creator / CLion build output
+**/build-*/
+**/build/
+**/cmake-build-*/
+**/CMakeFiles/
+**/CMakeCache.txt
+**/cmake_install.cmake
+**/Makefile
+**/*.autogen/
+
+# IDE user state
+**/.idea/
+**/*.user
+**/*.user.*
+
+# Generated report output (keep Typst sources and figure images)
+**/report/*.pdf
