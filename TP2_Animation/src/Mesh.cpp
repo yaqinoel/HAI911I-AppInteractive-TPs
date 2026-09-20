@@ -72,7 +72,7 @@ void Mesh::compute_skinning_weights( Skeleton & skeleton ) {
             double distance = (vertex.p - closetpoint).length();
             double safeDistance = std::max(distance, 1e-6);
 
-            double weight = 1.0 / std::pow(safeDistance, 2);
+            double weight = 1.0 / std::pow(safeDistance, 6);
             vertex.w.push_back(weight);
         }
 
