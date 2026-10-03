@@ -75,10 +75,36 @@ $ A =  mat(1,1,0; 0,1,1; 1,0,1), b = vec(1,0,0) $
     "figures/linearSystem.png",
   ),
   (
-    [x],
+    [],
   ),
   height: 4cm,
   caption: [xx],
 )
 
+
 == Interactions utilisateurs
+#report-image-row(
+  (
+    "figures/interactionUser.png",
+  ),
+  (
+    [],
+  ),
+  height: 4cm,
+  caption:[xx],
+)
+
+
+= Déformation ARAP
+
+== Exercice 1
+
+
+== Exercice 2
+
+
+== Exercice 3
+
+
+== Exercice 4
+

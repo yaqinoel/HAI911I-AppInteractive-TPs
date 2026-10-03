@@ -175,13 +175,15 @@ void updateSystem() {
 
     for( unsigned int v = 0 ; v < mesh.V.size() ; ++v ) {
         unsigned int numberOfNeighbors = edgeAndVertexWeights.get_n_adjacent_edges(v);
-        nrows += 0;   // WHAT TO PUT HERE ??????? How to update the number of rows ?
+        nrows += 3 * numberOfNeighbors;
     }
     for( unsigned int v = 0 ; v < mesh.V.size() ; ++v ) {
         if(verticesHandles[v] != -1) {
-            nrows += 0;  // WHAT TO PUT HERE ??????? How to update the number of rows ?
+            nrows += 3;
         }
     }
+
+    ncolumns = 3 * mesh.V.size();
 
     // Once the number of rows and columns have been found, we can allocate the matrices:
     arapLinearSystem.setDimensions( nrows , ncolumns );
@@ -196,15 +198,28 @@ void updateSystem() {
 
             unsigned int vNeighbor = it->first;
 
-            // WHAT TO PUT HERE ??????? How to update the entries of A ?
+            // x
+            arapLinearSystem.A(equationIndex, 3*vNeighbor) = 1;
+            arapLinearSystem.A(equationIndex, 3*v) = -1;
 
+            // y
+            arapLinearSystem.A(equationIndex+1, 3*vNeighbor+1) = 1;
+            arapLinearSystem.A(equationIndex+1, 3*v+1) = -1;
+
+            // z
+            arapLinearSystem.A(equationIndex+2, 3*vNeighbor+2) = 1;
+            arapLinearSystem.A(equationIndex+2, 3*v+2) = -1;
+
+            equationIndex += 3;
         }
     }
     for( unsigned int v = 0 ; v < mesh.V.size() ; ++v ) {
         if(verticesHandles[v] != -1) {
+            arapLinearSystem.A(equationIndex, 3*v) = 1;
+            arapLinearSystem.A(equationIndex+1, 3*v+1) = 1;
+            arapLinearSystem.A(equationIndex+2, 3*v+2) = 1;
 
-            // WHAT TO PUT HERE ??????? How to update the entries of A ?
-
+            equationIndex += 3;
         }
     }
 
