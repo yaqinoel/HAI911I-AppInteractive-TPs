@@ -114,17 +114,15 @@ void testlinearSystem() {
     // You can get inspiration from this piece of code :
     {
         linearSystem mySystem;
-        mySystem.setDimensions(4 , 3);
+        mySystem.setDimensions(3 , 3);
 
-        mySystem.A(0,0) = 1.0;  mySystem.A(0,1) = 2.0;  mySystem.A(0,2) = 4.0;
-        mySystem.A(1,0) = 1.0;  mySystem.A(1,2) = 1.0;
-        mySystem.A(2,0) = -1.0;  mySystem.A(2,1) = 1.0;
-        mySystem.A(3,1) = -1.0;  mySystem.A(3,2) = 4.0;
+        mySystem.A(0,0) = 1.0;  mySystem.A(0,1) = 1.0;  mySystem.A(0,2) = 0.0;
+        mySystem.A(1,0) = 0.0;  mySystem.A(1,1) = 1.0;  mySystem.A(1,2) = 1.0;
+        mySystem.A(2,0) = 1.0;  mySystem.A(2,1) = 0.0; mySystem.A(2,2) = 1.0;
         // the values that are not set with mySystem.A(row,column) = value, are set to 0 by default.
-        mySystem.b(0) = 5.0;
-        mySystem.b(1) = 6.0;
-        mySystem.b(2) = 2.0;
-        mySystem.b(3) = 4.0;
+        mySystem.b(0) = 1.0;
+        mySystem.b(1) = 0.0;
+        mySystem.b(2) = 0.0;
 
         mySystem.preprocess();
         Eigen::VectorXd X;
