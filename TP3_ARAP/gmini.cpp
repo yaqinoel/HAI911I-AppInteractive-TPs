@@ -293,7 +293,7 @@ void updateMeshVertexPositionsFromARAPSolver() {
                 }
 
                 // WHAT TO PUT HERE ??????? How to update the entries of the tensor matrix ?
-
+                tensorMatrix += rotatedEdge * initialEdge.transpose();
             }
             vertexRotationMatrices[v] = getClosestRotation( tensorMatrix );
         }
