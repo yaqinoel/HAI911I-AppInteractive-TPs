@@ -230,16 +230,14 @@ void updateSystem() {
 
 
 void updateMeshVertexPositionsFromARAPSolver() {
-    return; // TODO : COMMENT THIS LINE WHEN YOU START THE EXERCISE  (setup of the matrix A for the linear system A.X=B)
+    // return; // TODO : COMMENT THIS LINE WHEN YOU START THE EXERCISE  (setup of the matrix A for the linear system A.X=B)
     updateSystem();
 
     unsigned int maxIterationsForArap = 5;
 
 
-    return; // TODO : COMMENT THIS LINE WHEN YOU CONTINUE THE EXERCISE  (setup of the vector B for the linear system A.X=B)
+    // return; // TODO : COMMENT THIS LINE WHEN YOU CONTINUE THE EXERCISE  (setup of the vector B for the linear system A.X=B)
     // set the right values for the vector b in the linear system, solve the linear system and update the positions using the solution.
-
-
     for( unsigned int arapIteration = 0 ; arapIteration < maxIterationsForArap ; ++arapIteration ) {
         // 1 FIRST : SOLVE THE LINEAR SYSTEM TO UPDATE THE POSITIONS, GIVEN THE EXISTING ROTATION MATRICES
         unsigned int equationIndex = 0;
@@ -252,15 +250,20 @@ void updateMeshVertexPositionsFromARAPSolver() {
                     rotatedEdge[coord] = mesh.V[vNeighbor].pInit[coord]  -  mesh.V[v].pInit[coord];
                 rotatedEdge = vertexRotationMatrices[v] * rotatedEdge;
 
-                // WHAT TO PUT HERE ??????? How to update the entries of b ?
+                arapLinearSystem.b(equationIndex) = rotatedEdge[0];
+                arapLinearSystem.b(equationIndex+1) = rotatedEdge[1];
+                arapLinearSystem.b(equationIndex+2) = rotatedEdge[2];
 
+                equationIndex += 3;
             }
         }
         for( unsigned int v = 0 ; v < mesh.V.size() ; ++v ) {
             if(verticesHandles[v] != -1) {
+                arapLinearSystem.b(equationIndex) = mesh.V[v].p[0];
+                arapLinearSystem.b(equationIndex+1) = mesh.V[v].p[1];
+                arapLinearSystem.b(equationIndex+2) = mesh.V[v].p[2];
 
-                // WHAT TO PUT HERE ??????? How to update the entries of b ?
-
+                equationIndex += 3;
             }
         }
 
@@ -274,11 +277,7 @@ void updateMeshVertexPositionsFromARAPSolver() {
             }
         }
 
-
-
-        return; // TODO : COMMENT THIS LINE WHEN YOU CONTINUE THE EXERCISE (update of the rotation matrices -- auxiliary variables)
-
-
+        // return; // TODO : COMMENT THIS LINE WHEN YOU CONTINUE THE EXERCISE (update of the rotation matrices -- auxiliary variables)
 
         // 2 SECOND : UPDATE THE ROTATION MATRICES
         for( unsigned int v = 0 ; v < mesh.V.size() ; ++v ) {
