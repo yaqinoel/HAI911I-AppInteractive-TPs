@@ -34,6 +34,7 @@
 #include "src/LaplacianWeights.h"
 #include "extern/eigen3/Eigen/SVD"
 #include "extern/eigen3/Eigen/Geometry"
+#include "extern/eigen3/Eigen/LU"
 
 
 using namespace std;
@@ -70,16 +71,18 @@ ViewerState viewerState;
 #include "src/RectangleSelectionTool.h"
 RectangleSelectionTool rectangleSelectionTool;
 
+#include "src/SphereSelectionTool.h"
+
 enum SelectionToolState
 {
     SelectionTool_Rectangle,
     SelectionTool_Sphere
 };
-SelectionToolState selectionToolState;
+SelectionToolState selectionToolState = SelectionTool_Rectangle;
 
-#include "src/SphereSelectionTool.h"
 SphereSelectionTool sphereSelectionTool;
 float selectionRadius = 0.1f;
+std::vector<bool> selectionBeforeSphere;
 
 
 // -------------------------------------------
@@ -446,7 +449,16 @@ void addVerticesToCurrentHandle() {
     if( activeHandle < 0 || activeHandle >= numberOfHandles)
         return;
 
-    setTagForVerticesInRectangle( rectangleSelectionTool.isAdding );
+    if (selectionToolState == SelectionTool_Sphere) {
+        if (!sphereSelectionTool.isActive) return;
+        verticesAreMarkedForCurrentHandle = selectionBeforeSphere;
+        for (unsigned int v = 0; v < mesh.V.size(); ++v) {
+            if (sphereSelectionTool.contains(mesh.V[v].p))
+                verticesAreMarkedForCurrentHandle[v] = sphereSelectionTool.isAdding;
+        }
+    } else {
+        setTagForVerticesInRectangle(rectangleSelectionTool.isAdding);
+    }
 }
 
 void finalizeEditingOfCurrentHandle() {
@@ -468,6 +480,9 @@ void printUsage () {
          << "------------------" << endl
          << " ?: Print help" << endl
          << " f: Toggle full screen mode" << endl
+         << " n: Create handle; s: Switch rectangle/sphere selection" << endl
+         << " Ctrl+left/right click: Add/remove selection" << endl
+         << " Sphere: scroll to resize; Enter to confirm; Escape to cancel current sphere" << endl
          << " <drag>+<left button>: rotate model" << endl
          << " <drag>+<right button>: move model" << endl
          << " <drag>+<middle button>: zoom" << endl << endl;
@@ -680,6 +695,7 @@ void render () {
     mesh.draw();
     drawHandles();
     rectangleSelectionTool.draw();
+    sphereSelectionTool.draw();
 }
 
 
@@ -697,6 +713,8 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
     case GLFW_KEY_ENTER:
         std::cout << "GLFW_KEY_ENTER is pressed" << std::endl;
         if( viewerState == ViewerState_EDITINGHANDLE ) {
+            sphereSelectionTool.isActive = false;
+            rectangleSelectionTool.isActive = false;
             viewerState = ViewerState_NORMAL;
             finalizeEditingOfCurrentHandle();
         }
@@ -707,6 +725,18 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
         if( viewerState == ViewerState_TRANSLATINGHANDLE   ||   viewerState == ViewerState_ROTATINGHANDLE ) {
             viewerState = ViewerState_NORMAL;
         }
+        if (viewerState == ViewerState_EDITINGHANDLE && sphereSelectionTool.isActive) {
+            verticesAreMarkedForCurrentHandle = selectionBeforeSphere;
+            sphereSelectionTool.isActive = false;
+        }
+        break;
+
+    case GLFW_KEY_S:
+        std::cout << "S is pressed" << std::endl;
+        if (action != GLFW_PRESS) break;
+        selectionToolState = selectionToolState == SelectionTool_Rectangle ? SelectionTool_Sphere : SelectionTool_Rectangle;
+        sphereSelectionTool.isActive = false;
+        rectangleSelectionTool.isActive = false;
         break;
 
     case GLFW_KEY_N:
@@ -805,7 +835,42 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
 }
 
 
+bool pickModelPoint(GLFWwindow* window, Vec3& result) {
+    double mouseX, mouseY;
+    glfwGetCursorPos(window, &mouseX, &mouseY);
+    GLint viewport[4];
+    glGetIntegerv(GL_VIEWPORT, viewport);
+    int pixelX = static_cast<int>(mouseX);
+    int pixelY = viewport[3] - 1 - static_cast<int>(mouseY);
+    if (pixelX < 0 || pixelX >= viewport[2] ||
+        pixelY < 0 || pixelY >= viewport[3]) return false;
 
+    glMatrixMode(GL_MODELVIEW);
+    camera.apply();
+    glClear(GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST);
+    mesh.draw();
+    float depth;
+    glReadBuffer(GL_BACK);
+    glReadPixels(pixelX, pixelY, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+    if (depth >= 1.0f) return false;
+
+    Eigen::Matrix4d modelview, projection;
+    glGetDoublev(GL_MODELVIEW_MATRIX, modelview.data());
+    glGetDoublev(GL_PROJECTION_MATRIX, projection.data());
+    Eigen::Matrix4d transform = projection * modelview;
+    Eigen::FullPivLU<Eigen::Matrix4d> inverse(transform);
+    if (!inverse.isInvertible()) return false;
+    Eigen::Vector4d screenPoint(
+        2.0 * (pixelX + 0.5 - viewport[0]) / viewport[2] - 1.0,
+        2.0 * (pixelY + 0.5 - viewport[1]) / viewport[3] - 1.0,
+        2.0 * depth - 1.0, 1.0);
+    Eigen::Vector4d point = inverse.solve(screenPoint);
+    if (!point.allFinite() || std::abs(point[3]) < 1e-12) return false;
+    point /= point[3];
+    result = Vec3(point[0], point[1], point[2]);
+    return true;
+}
 
 
 // Called each time a mouse button is pressed
@@ -817,6 +882,25 @@ void mouseButtonCallback(GLFWwindow *window, int button, int state, int mods)
     int y = lastY;
 
     mouseIsPressed = state != GLFW_RELEASE;
+
+    if (viewerState == ViewerState_EDITINGHANDLE &&
+        selectionToolState == SelectionTool_Sphere &&
+        ((mods & GLFW_MOD_CONTROL) || sphereSelectionTool.isActive)) {
+        mouseMovePressed = mouseRotatePressed = mouseZoomPressed = false;
+        if (state != GLFW_PRESS || !(mods & GLFW_MOD_CONTROL) ||
+            (button != GLFW_MOUSE_BUTTON_LEFT && button != GLFW_MOUSE_BUTTON_RIGHT))
+            return;
+
+        Vec3 center;
+        if (!pickModelPoint(window, center)) return;
+
+        selectionBeforeSphere = verticesAreMarkedForCurrentHandle;
+        sphereSelectionTool.initSphere(center, selectionRadius);
+        sphereSelectionTool.isAdding = button == GLFW_MOUSE_BUTTON_LEFT;
+        sphereSelectionTool.isActive = true;
+        addVerticesToCurrentHandle();
+        return;
+    }
 
     if( mods & GLFW_MOD_CONTROL    ||   rectangleSelectionTool.isActive ) { // we can activate the selection only with ctrl pressed
         if( viewerState == ViewerState_EDITINGHANDLE ) {
@@ -868,9 +952,16 @@ void mouseButtonCallback(GLFWwindow *window, int button, int state, int mods)
 }
 
 
+void scrollCallback(GLFWwindow*, double, double yoffset) {
+    if (viewerState != ViewerState_EDITINGHANDLE ||
+        selectionToolState != SelectionTool_Sphere || !sphereSelectionTool.isActive)
+        return;
 
-
-
+    selectionRadius = std::max(0.001f, std::min(2.0f,
+        static_cast<float>(sphereSelectionTool.radius * std::pow(1.1, yoffset))));
+    sphereSelectionTool.updateSphere(selectionRadius);
+    addVerticesToCurrentHandle();
+}
 
 
 // Called each time the mouse cursor moves
@@ -960,6 +1051,7 @@ void initGLFW()
     glfwSetKeyCallback(g_window, keyCallback);
     glfwSetCursorPosCallback(g_window, cursorPosCallback);
     glfwSetMouseButtonCallback(g_window, mouseButtonCallback);
+    glfwSetScrollCallback(g_window, scrollCallback);
 }
 
 
@@ -1017,5 +1109,3 @@ int main(int argc, char **argv)
     std::cout << " > Quit" << std::endl;
     return EXIT_SUCCESS;
 }
-
-
