@@ -122,13 +122,37 @@ public:
     {
         resize(mesh.V.size());
 
-        // For each triangle : 
-            // Compute its edge p0, p1, p2
+        // For each triangle :
+        for (unsigned int t = 0; t < mesh.T.size(); ++t) {
+            unsigned int v0 = mesh.T[t][0];
+            unsigned int v1 = mesh.T[t][1];
+            unsigned int v2 = mesh.T[t][2];
+
+            Vec3 p0 = mesh.V[v0].pInit;
+            Vec3 p1 = mesh.V[v1].pInit;
+            Vec3 p2 = mesh.V[v2].pInit;
+
+            // Compute its edge e0, e1, e2
+            Vec3 e0 = p1 - p0;  Vec3 reverse_e0 = p0 - p1;
+            Vec3 e1 = p2 - p1;  Vec3 reverse_e1 = p1 - p2;
+            Vec3 e2 = p0 - p2;  Vec3 reverse_e2 = p2 - p0;
+
             // Compute opposite angle for each edge
             // Compute cotangent of this angle
-            // Add to edge weight 
+            double c0 = Vec3::dot(reverse_e1, e2) / Vec3::cross(reverse_e1, e2).length();
+            double c1 = Vec3::dot(reverse_e2, e0) / Vec3::cross(reverse_e2, e0).length();
+            double c2 = Vec3::dot(reverse_e0, e1) / Vec3::cross(reverse_e0, e1).length();
 
+            // Add to edge weight
+            edge_weights[v0][v1] += c0 / 2.0;
+            edge_weights[v1][v0] += c0 / 2.0;
 
+            edge_weights[v1][v2] += c1 / 2.0;
+            edge_weights[v2][v1] += c1 / 2.0;
+
+            edge_weights[v2][v0] += c2 / 2.0;
+            edge_weights[v0][v2] += c2 / 2.0;
+        }
     }
 
     //---------------------------------   YOU DO NOT NEED TO CHANGE THE FOLLOWING CODE  --------------------------------//
