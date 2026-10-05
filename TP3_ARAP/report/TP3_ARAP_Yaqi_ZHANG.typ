@@ -52,7 +52,7 @@
 
 #v(0.5cm)
 
-#link("https://github.com/yaqinoel/HAI911I-AppInteractive-TPs/tree/70b9c99520fcd85797fb4fd48504ac2630d0505d/TP3_ARAP")[Lien vers le code sur GitHub (cliquez pour visiter)]
+#link("https://github.com/yaqinoel/HAI911I-AppInteractive-TPs/tree/d7e661af8d6b47a483b94e284da311ef17ddea67/TP3_ARAP")[Lien vers le code sur GitHub (cliquez pour visiter)]
 
 #v(0.5cm)
 
